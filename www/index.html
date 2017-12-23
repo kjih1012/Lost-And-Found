@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, width=device-width">
+	<title>MY PICK</title>
+
+	<link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css" />
+	<script src="jquery.mobile/jquery-1.11.1.min.js"></script>
+	<script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+	<script src="cordova.js"></script>
+
+	<!-- 구글맵 API 라이브러리 파일(CDN 방식)  -->
+	<script src="http://maps.google.com/maps/api/js?sensor=true&language=ko"></script>
+	<!-- jquery-ui-map 플러그인 라이브러리 파일(다운로드 방식)  -->
+	<script src="ui/min/jquery.ui.map.full.min.js"></script>
+	<script src="ui/jquery.ui.map.extensions.js"></script>
+
+	<!-- 사용자 정의 자바스크립트 파일 -->
+	<script src="dbHandle.js"></script>
+
+	<script>
+		$(document).ready(function() {
+			// DB 연결
+			openDB();
+			createTable();
+			// 이벤트 함수 정의
+			$('#submit1').click(function() {
+				insertRestaurant();
+			});
+			$('#cancel1').click(function() {
+				$('#restaurantType1').val('종류').attr('selected', 'selected');
+				$('#restaurantType1').selectmenu('refresh');
+			});
+			$('#search2').click(function() {
+				var name = $('#sRestaurantName2').val();
+				selectRestaurant2(name);
+			});
+			$('#submit2').click(function() {
+				updateRestaurant();
+			});
+			$('#cancel2').click(function() {
+				$('#restaurantType2').val('종류').attr('selected', 'selected');
+				$('#restaurantType2').selectmenu('refresh');
+			});
+			$('#search3').click(function() {
+				var name = $('#sRestaurantName3').val();
+				selectRestaurant3(name);
+			});
+			$('#submit3').click(function() {
+				deleteRestaurant();
+			});
+			$('#search4').click(function() {
+				var name = $('#sRestaurantName4').val();
+				selectRestaurant4(name);
+			});
+
+			$('#first').click(function() {
+				position = 'first';
+				listRestaurant();
+			});
+			$('#prev').click(function() {
+				position = 'prev';
+				listRestaurant();
+			});
+			$('#next').click(function() {
+				position = 'next';
+				listRestaurant();
+			});
+			$('#last').click(function() {
+				position = 'last';
+				listRestaurant();
+			});
+
+			$('#listButton').click(function() {
+				selectAllRestaurant();
+			})
+
+			$('#getAddressBtn1').click(function() {
+				getMyLocation();
+			})
+
+			$(document).on("click", ".toDetail", function() {
+				var restaurant = $(this).attr('value');
+				selectedDeatil(restaurant);
+			})
+
+			$('input[id*="place"]').click(function() {
+				addList();
+			})
+		});
+	</script>
+	<style>
+		#mapArea {
+			width: 100%;
+			height: 330px;
+		}
+
+		#mapArea2 {
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+	<style type="text/css">
+		img {
+			padding: 10px;
+			margin: 10px 50px;
+		}
+
+		.gap {
+			padding-top: 15px;
+			padding-bottom: 30px;
+		}
+	</style>
+</head>
+
+<body>
+
+	<!-- 시작 화면 -->
+	<div data-role="page" id="main">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<h1>LOST AND FOUND</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext" class="ui-btn-right">Home</a>
+		</div>
+		<div data-role="content">
+			<center>
+				<h1>LOST AND FOUND</h1>
+				<h4>분실물 찾기 어플</h4>
+			</center>
+			<a data-role="button" href="#page0" data-theme="b">분실물 정보 추가/변경하기</a>
+			<a data-role="button" href="#page5" data-theme="b" id="listButton">분실물 리스트</a>
+			<a data-role="button" href="#page6" data-theme="b" id="contact">유실물 센터</a>
+			<a data-role="button" href="#lostlist" data-theme="b" id="ll">분실 장소별 리스트</a>
+		</div>
+	</div>
+
+	<div data-role="page" id="page0">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+			<h1>분실물 정보 관리</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext" class="ui-btn-right">Home</a>
+		</div>
+		<div data-role="content">
+			<ul data-role="listview" data-inset="true">
+				<li><a href="#page1">분실물 정보 추가</a></li>
+				<li><a href="#page2">분실물 정보 갱신</a></li>
+				<li><a href="#page3">분실물 정보 삭제</a></li>
+				<li><a href="#page4">분실물 정보 조회</a></li>
+			</ul>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+
+	<!-- 식당정보 추가 화면 -->
+	<div data-role="page" id="page1">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+			<h1>분실물 정보</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext">Home</a>
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#page1">입력</a></li>
+					<li><a href="#page2">수정</a></li>
+					<li><a href="#page3">삭제</a></li>
+					<li><a href="#page4">전체검색</a></li>
+				</ul>
+			</div>
+		</div>
+		<div data-role="content">
+			<form name="form1">
+				<h3>분실물 정보 입력</h3>
+				<div class="ui-body ui-body-a gap">
+					<label for="restaurantType1" class="select">습득 장소:</label>
+					<select name="restaurantType1" id="restaurantType1" data-native-menu="false" data-mini="true" data-inline="true">
+					<option vlaue="장소">장소</option>
+					<option value="50주년 기념관">50주년 기념관</option>
+					<option value="인문사회관">인문사회관</option>
+					<option value="조형예술관">조형예술관</option>
+					<option value="제1과학관">제1과학관</option>
+					<option value="제2과학관">제2과학관</option>
+				</select>
+					<label for="RestaurantName1">분실물 이름:</label>
+					<input type="text" name="restaurantName1" id="restaurantName1" value="" data-mini="true" />
+					<label for="RestaurantTime1">습득 시간:</label>
+					<input type="text" name="restaurantTime1" id="restaurantTime1" value="" data-mini="true" />
+					<label for="RestaurantAddress1">보관 장소:</label>
+					<input type="text" name="restaurantAddress1" id="restaurantAddress1" value="" data-mini="true" />
+					<div id="box1" class="ui-bar ui-bar-a">
+						위도 : <br/> 경도 :
+					</div>
+					<input type="button" name="getAddressBtn1" id="getAddressBtn1" value="현재 위치 불러오기" data-mini="true" />
+					<label for="RestaurantMemo1">메모:</label>
+					<input type="text" name="restaurantMemo1" id="restaurantMemo1" value="" data-mini="true" />
+
+				</div>
+				<div class="ui-body">
+					<fieldset class="ui-grid-a">
+						<div class="ui-block-a">
+							<input type="reset" id="cancel1" value="취소" />
+						</div>
+						<div class="ui-block-b">
+							<input type="button" id="submit1" value="추가" />
+						</div>
+					</fieldset>
+				</div>
+			</form>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+
+	<!-- 식당정보 갱신 화면 -->
+	<div data-role="page" id="page2">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+			<h1>분실물 정보</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext">Home</a>
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#page1">입력</a></li>
+					<li><a href="#page2">수정</a></li>
+					<li><a href="#page3">삭제</a></li>
+					<li><a href="#page4">전체검색</a></li>
+				</ul>
+			</div>
+		</div>
+		<div data-role="content">
+			<form name="form2">
+				<h3>분실물 정보 수정</h3>
+				<div class="ui-body ui-body-a gap">
+					<label for="sRestaurantName2">검색 분실물 이름:</label>
+					<input type="search" name="sRestaurantName2" id="sRestaurantName2" value="" data-mini="true" />
+					<label for="restaurantType2" class="select">습득 장소:</label>
+					<select name="restaurantType2" id="restaurantType2" data-native-menu="false" data-mini="true" data-inline="true">
+					<option vlaue="장소">장소</option>
+					<option value="50주년 기념관">50주년 기념관</option>
+					<option value="인문사회관">인문사회관</option>
+					<option value="조형예술관">조형예술관</option>
+					<option value="제1과학관">제1과학관</option>
+					<option value="제2과학관">제2과학관</option>
+				</select>
+					<label for="restaurantName2">분실물 이름:</label>
+					<input type="text" name="restaurantName2" id="restaurantName2" value="" data-mini="true" />
+					<label for="RestaurantTime2">습득 시간:</label>
+					<input type="text" name="restaurantTime2" id="restaurantTime2" value="" data-mini="true" />
+					<label for="RestaurantAddress2">보관 장소:</label>
+					<input type="text" name="restaurantAddress2" id="restaurantAddress2" value="" data-mini="true" />
+					<div id="box2" class="ui-bar ui-bar-a">
+						위도 : <br/> 경도 :
+					</div>
+					<input type="button" name="getAddressBtn2" id="getAddressBtn2" value="현재 위치 불러오기" data-mini="true" />
+					<label for="RestaurantMemo2">메모:</label>
+					<input type="text" name="restaurantMemo2" id="restaurantMemo2" value="" data-mini="true" />
+
+				</div>
+				<div class="ui-body">
+					<fieldset class="ui-grid-b">
+						<div class="ui-block-a">
+							<input type="reset" id="cancel2" value="취소" />
+						</div>
+						<div class="ui-block-b">
+							<input type="button" id="submit2" value="수정" />
+						</div>
+						<div class="ui-block-c">
+							<input type="button" id="search2" value="검색" />
+						</div>
+					</fieldset>
+				</div>
+			</form>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+
+	<!-- 식당정보 삭제 화면 -->
+	<div data-role="page" id="page3">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+			<h1>분실물 정보</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext">Home</a>
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#page1">입력</a></li>
+					<li><a href="#page2">수정</a></li>
+					<li><a href="#page3">삭제</a></li>
+					<li><a href="#page4">전체검색</a></li>
+				</ul>
+			</div>
+		</div>
+		<div data-role="content">
+			<form name="form3">
+				<h3>분실물 정보 삭제</h3>
+				<div class="ui-body ui-body-a gap">
+					<label for="sRestaurantName3">검색 분실물 이름:</label>
+					<input type="search" name="sRestaurantName3" id="sRestaurantName3" value="" data-mini="true" />
+					<label for="restaurantType3">습득 장소:</label>
+					<input type="text" name="restaurantType3" id="restaurantType3" value="" data-mini="true" />
+					<label for="restaurantName3">분실물 이름:</label>
+					<input type="text" name="restaurantName3" id="restaurantName3" value="" data-mini="true" />
+				</div>
+				<div class="ui-body">
+					<fieldset class="ui-grid-b">
+						<div class="ui-block-a">
+							<input type="reset" id="cancel3" value="취소" />
+						</div>
+						<div class="ui-block-b">
+							<input type="button" id="submit3" value="삭제" />
+						</div>
+						<div class="ui-block-c">
+							<input type="button" id="search3" value="검색" />
+						</div>
+					</fieldset>
+				</div>
+			</form>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+
+	<!-- 전체 식당조회 화면 -->
+	<div data-role="page" id="page4">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+			<h1>분실물 정보</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext">Home</a>
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#page1">입력</a></li>
+					<li><a href="#page2">수정</a></li>
+					<li><a href="#page3">삭제</a></li>
+					<li><a href="#page4">전체검색</a></li>
+				</ul>
+			</div>
+		</div>
+		<div data-role="content">
+			<h3>분실물 정보 검색</h3>
+			<div class="ui-body ui-body-a gap">
+				<fieldset data-role="controlgroup" data-type="horizontal" style="text-align:right">
+					<input type="button" id="first" value="|<" />
+					<input type="button" id="prev" value="<" />
+					<input type="button" id="next" value=">" />
+					<input type="button" id="last" value=">|" />
+				</fieldset>
+				<label for="sRestaurantName4">분실물 식당 이름:</label>
+				<input type="search" name="sRestaurantName4" id="sRestaurantName4" value="" data-mini="true" />
+				<label for="restaurantType4">습득 장소:</label>
+				<input type="text" name="restaurantType4" id="restaurantType4" value="" data-mini="true" />
+				<label for="restaurantName4">분실물 이름:</label>
+				<input type="text" name="restaurantName4" id="restaurantName4" value="" data-mini="true" />
+			</div>
+			<div class="ui-body">
+				<fieldset class="ui-grid-a">
+					<div class="ui-block-a">
+						<input type="reset" id="cancel4" value="취소" />
+					</div>
+					<div class="ui-block-b">
+						<input type="button" id="search4" value="검색" />
+					</div>
+				</fieldset>
+			</div>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+
+	<div data-role="page" id="page5">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<h1>MY PICK</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext" class="ui-btn-right">Home</a>
+		</div>
+		<div data-role="content">
+			<ul data-role="listview" id="restaurantList" data-inset="true">
+			</ul>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+
+	<div data-role="page" id="detail">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<h1>LOST AND FOUND</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext" class="ui-btn-right">Home</a>
+		</div>
+		<div data-role="content" id="detailcontent">
+
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+	<div data-role="page" id="page6">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<h1>LOST AND FOUND</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext" class="ui-btn-right">Home</a>
+		</div>
+		<div data-role="content" id="contactcenter">
+			<ul data-role="listview" data-inset="true">
+				<li data-theme="b"><a href="http://www.lost112.go.kr">경찰청 유실물 종합안내</a></li>
+				<li data-theme="b"><a href="http://www.seoulmetro.co.kr/kr/page.do?menuIdx=730">서울교통공사 유실물센터</a></li>
+				<li data-theme="b"><a href="https://www.handphone.or.kr/">핸드폰찾기 콜센터</a></li>
+				<li data-theme="b"><a href="http://www.letskorail.com/ebizcom/cs/guide/lost/lost02.do">코레일 유실물 찾기</a></li>
+			</ul>
+		</div>
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+	<div data-role="page" id="lostlist">
+		<div data-role="header" data-position="fixed" data-theme="b">
+			<h1>LOST AND FOUND</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext" class="ui-btn-right">Home</a>
+		</div>
+		<div data-role="content" id="lost">
+			<fieldset data-role="controlgroup" data-type="horizontal">
+				<legend>습득 장소</legend>
+				<input type="radio" name="place" id="place1" value="1" />
+				<label for="place1">50주년기념관</label>
+				<input type="radio" name="place" id="place2" value="2" />
+				<label for="place2">인문사회관</label>
+				<input type="radio" name="place" id="place3" value="3" />
+				<label for="place3">조형예술관</label>
+				<input type="radio" name="place" id="place4" value="4" />
+				<label for="place4">제1과학관</label>
+				<input type="radio" name="place" id="place5" value="5" />
+				<label for="place5">제2과학관</label>
+			</fieldset>
+			<div>
+				<ul data-role="listview" id="lostList" data-theme="b" data-inset="true">
+				</ul>
+			</div>
+		</div>
+
+		<div data-role="footer" data-position="fixed" data-theme="b">
+			<h4>LOST AND FOUND</h4>
+		</div>
+	</div>
+</body>
+
+</html>
